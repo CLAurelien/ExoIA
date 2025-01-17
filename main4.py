@@ -66,13 +66,10 @@ def label_to_one_hot(label):
     return one_hot
 
 def apprentissage():
-    i = 0
     listErreurTotale = []
     erreurTotal = 1
-    erreurOne = 1
-    erreurZero = 0
     epsilon = 0.01
-    while(erreurTotal>0.01):
+    for i in range(0,60000):
         potI = []
         xI = []
         deltaCaches = []
@@ -123,16 +120,29 @@ def apprentissage():
 
 
         # Calculer les erreurs
+        # De ce que j'ai compris, faire 100 apprentissage -> test -> si % d'erreur > 4% -> re-boucler
 
-        if i%2 == 0:
-            erreurZero = delta
-        else:
-            erreurOne = delta
-
-        erreurTotal = abs(erreurOne) + abs(erreurZero)
+        # erreurTotal = abs(erreurOne) + abs(erreurZero)
         listErreurTotale.append(erreurTotal)
         print("Erreur Totale : " + str(erreurTotal))
-        i += 1
         print("")
+    graphiqueErreurApprentissage(listErreurTotale)
     print("Fin apprentissage")
 
+def graphiqueErreurApprentissage(liste):
+    indices = list(range(len(liste)))
+    # Tracer la courbe
+    plt.figure(figsize=(10, 6))
+    plt.plot(indices, liste, marker='o', linestyle='-', color='b', label='Nb Erreurs')
+
+    # Personnalisation du graphique
+    plt.title("Courbe du Nombre d'Erreurs Totale en Fonction du nombre d'itérations")
+    plt.xlabel("Itérations")
+    plt.ylabel("Nombre d'Erreurs")
+    plt.grid(True)
+    plt.legend()
+
+    # Afficher le graphique
+    plt.show()
+
+apprentissage()
