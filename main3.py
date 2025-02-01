@@ -1,81 +1,80 @@
 import random
-import shutil
-import matplotlib.pyplot as plt # A installer si vouloir graphique
+import matplotlib.pyplot as plt
 
-fileUn = 'un.txt'
-fileZero = 'zero.txt'
-fileTaken = ""
+# Fichiers des chiffres de 0 à 9
+fichiers = ["zero.txt", "un.txt", "deux.txt",
+            "trois.txt", "quatre.txt", "cinq.txt",
+            "six.txt", "sept.txt", "huit.txt", "neuf.txt"]
 
 poids = []
+for i in range(10):  # 10 neurones de sortie
+    ligne_poids = []
+    for j in range(48):  # 48 entrées
+        ligne_poids.append(random.uniform(-1, 1) / 48)
+    poids.append(ligne_poids)
 
-for i in range(0,48):
-    poids.append(random.randint(0,100)/100/48) 
-
-print(poids)
-print(len(poids))
 
 def apprentissage():
     i = 0
-    listErreurTotale = []
-    erreurTotal = 1
-    erreurOne = 1
-    erreurZero = 0
+    erreurs_totales = []
+    erreur_total = 1
     teta = 0.5
     epsilon = 0.01
-    yd = 0
-    while(erreurTotal>0.01):
-        potI = 0
+
+    while erreur_total > 0.01:
+        # Fichier chiffre aléatoire
+        fichier_choisi = random.choice(fichiers)
+        yd = [0] * 10 # Init sorties
+
         entrees = []
-        if i%2 == 0:
-            fileTaken = fileZero
-        else:
-            fileTaken = fileUn
-
-        print("Type file : " + fileTaken)
-
-        with open(fileTaken, 'r') as f:
+        with open(fichier_choisi, 'r') as f:
             for line in f:
                 for element in line:
                     if element == ".":
                         entrees.append(0)
                     elif element == "*":
                         entrees.append(1)
-                    else:
-                        yd = element
+                    elif element.isdigit():
+                        yd[int(element)] = 1
 
-        for neurone in range(0,48):
-            potI += entrees[neurone]*poids[neurone]
+        sorties = []
+        for j in range(10):
+            potI = 0
+            for k in range(48):
+                potI += entrees[k] * poids[j][k]
+            sorties.append(potI)
 
-        print("Poti : " + str(potI))
-        if potI > teta:
-            xI = 1
-        else:
-            xI = 0
+        xI = []
+        for s in sorties:
+            if s > teta:
+                xI.append(1)
+            else:
+                xI.append(0)
 
-        print("Result : " + str(xI))
-        delta = int(yd) - potI
+        # Erreurs
+        deltas = []
+        for j in range(10):
+            deltas.append(yd[j] - sorties[j])
 
-        for neurone in range(len(poids)):
-            poids[neurone] += epsilon*delta*entrees[neurone]
+        # MAJ des poids
+        for j in range(10):
+            for k in range(48):
+                poids[j][k] += epsilon * deltas[j] * entrees[k]
 
-        if i%2 == 0:
-            erreurZero = delta
-        else:
-            erreurOne = delta
-
-        erreurTotal = abs(erreurOne) + abs(erreurZero)
-        listErreurTotale.append(erreurTotal)
-        print("Erreur Totale : " + str(erreurTotal))
+        # Erreur totale
+        erreur_total = sum(abs(d) for d in deltas)
+        erreurs_totales.append(erreur_total)
+        print(f"Itération {i}, Erreur Totale: {erreur_total}")
         i += 1
-        print("")
-    graphiqueErreurApprentissage(listErreurTotale)
-    print("Fin apprentissage")
 
-def graphiqueErreurApprentissage(liste):
-    indices = list(range(len(liste)))
+    graphique_erreur_apprentissage(erreurs_totales)
+
+
+def graphique_erreur_apprentissage(erreurs):
+    indices = list(range(len(erreurs)))
     # Tracer la courbe
     plt.figure(figsize=(10, 6))
-    plt.plot(indices, liste, marker='o', linestyle='-', color='b', label='Nb Erreurs')
+    plt.plot(indices, erreurs, marker='o', linestyle='-', color='b', label='Nb Erreurs')
 
     # Personnalisation du graphique
     plt.title("Courbe du Nombre d'Erreurs Totale en Fonction du nombre d'itérations")
@@ -83,8 +82,6 @@ def graphiqueErreurApprentissage(liste):
     plt.ylabel("Nombre d'Erreurs")
     plt.grid(True)
     plt.legend()
-
-    # Afficher le graphique
     plt.show()
 
 def createBruit(fichier, pourcentage):
@@ -113,68 +110,60 @@ def createBruit(fichier, pourcentage):
 
     return contenu_modifie
 
-def test(pourcentage, isZero):
-    nbErreurBruit = 0
+def test(pourcentage):
+    erreurs_bruit = 0
     teta = 0.5
-    yd = 0
-    for i in range(0,50):
-        potI = 0
-        entrees = []
-        chaineZeroBruit = createBruit(fileZero, pourcentage)
-        chaineUnBruit = createBruit(fileUn, pourcentage)
-        if isZero:
-            chaineTaken = chaineZeroBruit
-        else:
-            chaineTaken = chaineUnBruit
 
-        for line in chaineTaken:
+    for i in range(100):
+        entrees = []
+        fichier_choisi = random.choice(fichiers)
+        fichier = createBruit(fichier_choisi, pourcentage)
+        yd = [0] * 10
+
+        for line in fichier:
             for element in line:
                 if element == ".":
                     entrees.append(0)
                 elif element == "*":
                     entrees.append(1)
-                else:
-                    yd = element
+                elif element.isdigit():
+                    yd[int(element)] = 1
 
-        for neurone in range(0, 48):
-            potI += entrees[neurone] * poids[neurone]
+        sorties = []
+        for j in range(10):
+            potI = 0
+            for k in range(48):
+                potI += entrees[k] * poids[j][k]
+            sorties.append(potI)
 
-        print("Poti : " + str(potI))
-        if potI > teta:
-            xI = 1
-        else:
-            xI = 0
+        xI = []
+        for s in sorties:
+            if s > teta:
+                xI.append(1)
+            else:
+                xI.append(0)
 
-        print("Result : " + str(xI))
-        delta = int(yd) - xI
+        if xI != yd:
+            erreurs_bruit += 1
 
-        if delta != 0 :
-            nbErreurBruit += 1
+    return erreurs_bruit
 
-        print("")
 
-    print(nbErreurBruit)
-    return nbErreurBruit
+def graphique_erreur_test():
+    pourcentages = list(range(0, 51, 1))  # De 0 à 50% de bruit
+    erreurs = []
+    for p in pourcentages:
+        erreurs.append(test(p))
 
-def graphiqueErreurTest():
-    pourcentages = list(range(0, 51, 2))  # De 0% à 50% par pas de 2
-    erreursZero = [test(p, True) for p in pourcentages]  # Pour 0
-    erreursUn = [test(p, False) for p in pourcentages]  # Pour 1
-
-    # Tracer la courbe
-    plt.figure(figsize=(10, 6))
-    plt.plot(pourcentages, erreursZero, marker='o', linestyle='-', color='b', label='0')
-    plt.plot(pourcentages, erreursUn, marker='s', linestyle='-', color='r', label='1')
-
-    # Personnalisation du graphique
-    plt.title("Courbe du Nombre d'Erreurs en Fonction du Pourcentage de bruit")
-    plt.xlabel("Pourcentage (%)")
+    plt.plot(pourcentages, erreurs, marker='o', linestyle='-', color='r', label='Erreurs')
+    plt.title("Nombre d'Erreurs en Fonction du Pourcentage de Bruit")
+    plt.xlabel("Pourcentage de bruit (%)")
     plt.ylabel("Nombre d'Erreurs")
     plt.grid(True)
     plt.legend()
-
-    # Afficher le graphique
     plt.show()
 
+
+# Exécution
 apprentissage()
-graphiqueErreurTest()
+graphique_erreur_test()
